@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Start-Wrapper (deutsch kommentiert):
+# Dieses kleine Skript erlaubt das Ausführen von `start` im Container-PATH.
+# Es leitet alle Argumente an den Hauptstarter weiter und setzt einen
+# sinnvollen Standardpfad, falls kein APP_DIR übergeben wurde.
+# So funktioniert `distrobox enter drv-eantrag -- start` auch ohne Host-init_hooks.
+
+# Standard-App-Verzeichnis: per Argument, per EANTRAG_APP_DIR oder im Home
+APP_DIR="${1:-${EANTRAG_APP_DIR:-${HOME}/eAntragExpertenversion}}"
+
+# Exec ersetzt den Prozess durch den eigentlichen Sandbox-Starter
+exec /usr/local/bin/start_eantrag_sandbox.sh "${APP_DIR}"

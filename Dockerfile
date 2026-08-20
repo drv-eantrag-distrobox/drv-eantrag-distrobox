@@ -10,6 +10,9 @@ ARG EANTRAG_VERSION=dev
 
 FROM docker.io/library/eclipse-temurin:${JAVA_VERSION}-jre-${UBUNTU_CODENAME}
 
+# Quelle des Images (OCI-Label) — zeigt auf das Quell-Repository
+LABEL org.opencontainers.image.source="https://github.com/drv-eantrag-distrobox/drv-eantrag-distrobox"
+
 ENV DEBIAN_FRONTEND=noninteractive     LANG=C.UTF-8     LC_ALL=C.UTF-8     HOME=/home/distrobox     PATH=/usr/local/bin:${PATH}
 
 # Minimal notwendige GUI-/Druck-/Clipboard-Abhängigkeiten für die Container-Laufzeit.
@@ -23,8 +26,9 @@ COPY start_eantrag_dark.sh /usr/local/bin/start_eantrag_dark.sh
 COPY start_eantrag_light.sh /usr/local/bin/start_eantrag_light.sh
 COPY ea_clipboard_helper.sh /usr/local/bin/ea_clipboard_helper.sh
 COPY configure_credentials.sh /usr/local/bin/configure_credentials.sh
+COPY start /usr/local/bin/start
 
-RUN chmod 0755 /usr/local/bin/start_eantrag_sandbox.sh     /usr/local/bin/start_eantrag_dark.sh     /usr/local/bin/start_eantrag_light.sh     /usr/local/bin/ea_clipboard_helper.sh     /usr/local/bin/configure_credentials.sh     && mkdir -p /home/distrobox/eAntragExpertenversion     && mkdir -p /home/distrobox/.local/bin     && chown -R 1000:1000 /home/distrobox
+RUN chmod 0755 /usr/local/bin/start /usr/local/bin/start_eantrag_sandbox.sh     /usr/local/bin/start_eantrag_dark.sh     /usr/local/bin/start_eantrag_light.sh     /usr/local/bin/ea_clipboard_helper.sh     /usr/local/bin/configure_credentials.sh     && mkdir -p /home/distrobox/eAntragExpertenversion     && mkdir -p /home/distrobox/.local/bin     && chown -R 1000:1000 /home/distrobox
 
 # Wenn ein Git-Tag gesetzt ist, wird die Version in die Laufzeit-Datei geschrieben.
 RUN if [ -n "${EANTRAG_VERSION}" ] && [ "${EANTRAG_VERSION}" != "dev" ]; then \
