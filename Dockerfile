@@ -5,10 +5,10 @@
 # Letzter erfolgreicher CI-Test: 2026-08-19 (Ubuntu 22.04 LTS / Java 21)
 # Bei Major-Updates (z.B. Java 25) einfach die ARG-Werte beim Build anpassen.
 ARG JAVA_VERSION=21
-ARG UBUNTU_CODENAME=jammy
+ARG UBUNTU_CODENAME=noble  # Ubuntu 24.04 LTS "Noble Numbat"
 ARG EANTRAG_VERSION=dev
 
-FROM ghcr.io/adoptium/temurin:${JAVA_VERSION}-jre-${UBUNTU_CODENAME}
+FROM docker.io/library/eclipse-temurin:${JAVA_VERSION}-jre-${UBUNTU_CODENAME}
 
 ENV DEBIAN_FRONTEND=noninteractive     LANG=C.UTF-8     LC_ALL=C.UTF-8     HOME=/home/distrobox     PATH=/usr/local/bin:${PATH}
 
