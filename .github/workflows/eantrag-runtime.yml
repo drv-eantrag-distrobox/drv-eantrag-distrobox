@@ -62,8 +62,11 @@ jobs:
           docker run --rm eantrag-runtime:test java -version 2>&1 | tee /tmp/java-image-version.txt
           echo "--- image java version ---"
           cat /tmp/java-image-version.txt
-          if ! grep -q '"${{ env.TARGET_JAVA_VERSION }}' /tmp/java-image-version.txt; then
-            echo "Java version mismatch inside image: expected ${{ env.TARGET_JAVA_VERSION }}"
+          # Extract the major version number from the first line, e.g. openjdk version "21.0.x"
+          ACTUAL_MAJOR=$(sed -n '1p' /tmp/java-image-version.txt | sed -E 's/.*"([0-9]+).*/\1/') || true
+          echo "Detected Java major: ${ACTUAL_MAJOR}"
+          if [ "${ACTUAL_MAJOR}" != "${{ env.TARGET_JAVA_VERSION }}" ]; then
+            echo "Java version mismatch inside image: expected ${{ env.TARGET_JAVA_VERSION }} but got ${ACTUAL_MAJOR}"
             exit 1
           fi
 
