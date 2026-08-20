@@ -30,13 +30,10 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Validate Java target on runner
+      - name: Show runner Java (informational)
         run: |
-          java -version 2>&1 | tee /tmp/java-runner-version.txt
-          if ! grep -q '"${{ env.TARGET_JAVA_VERSION }}' /tmp/java-runner-version.txt; then
-            echo "Java version mismatch: expected ${{ env.TARGET_JAVA_VERSION }}"
-            exit 1
-          fi
+          echo "Runner Java (informational):"
+          java -version || true
 
       - name: Extract tagged version
         id: version
@@ -47,19 +44,35 @@ jobs:
             echo "value=dev" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build image locally for smoke test
-        run: |
-          docker build \
-            --build-arg JAVA_VERSION=${{ env.TARGET_JAVA_VERSION }} \
-            --build-arg UBUNTU_CODENAME=${{ env.TARGET_UBUNTU_CODENAME }} \
-            --build-arg EANTRAG_VERSION=${{ steps.version.outputs.value }} \
-            --tag eantrag-runtime:test \
-            .
+      - name: Build image with buildx for smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: |
+            eantrag-runtime:test
+          load: true
+          build-args: |
+            JAVA_VERSION=${{ env.TARGET_JAVA_VERSION }}
+            UBUNTU_CODENAME=${{ env.TARGET_UBUNTU_CODENAME }}
+            EANTRAG_VERSION=${{ steps.version.outputs.value }}
 
-      - name: Smoke test image
+      - name: Smoke test image (run java -version inside image)
         run: |
           docker run --rm eantrag-runtime:test java -version 2>&1 | tee /tmp/java-image-version.txt
-          grep -q '"${{ env.TARGET_JAVA_VERSION }}' /tmp/java-image-version.txt
+          echo "--- image java version ---"
+          cat /tmp/java-image-version.txt
+          if ! grep -q '"${{ env.TARGET_JAVA_VERSION }}' /tmp/java-image-version.txt; then
+            echo "Java version mismatch inside image: expected ${{ env.TARGET_JAVA_VERSION }}"
+            exit 1
+          fi
+
+      - name: Upload diagnostic logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eantrag-diagnostic-logs
+          path: /tmp/java-image-version.txt
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
