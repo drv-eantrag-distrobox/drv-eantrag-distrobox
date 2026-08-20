@@ -27,9 +27,11 @@ COPY configure_credentials.sh /usr/local/bin/configure_credentials.sh
 RUN chmod 0755 /usr/local/bin/start_eantrag_sandbox.sh     /usr/local/bin/start_eantrag_dark.sh     /usr/local/bin/start_eantrag_light.sh     /usr/local/bin/ea_clipboard_helper.sh     /usr/local/bin/configure_credentials.sh     && mkdir -p /home/distrobox/eAntragExpertenversion     && mkdir -p /home/distrobox/.local/bin     && chown -R 1000:1000 /home/distrobox
 
 # Wenn ein Git-Tag gesetzt ist, wird die Version in die Laufzeit-Datei geschrieben.
-RUN if [ -n "${EANTRAG_VERSION}" ] && [ "${EANTRAG_VERSION}" != "dev" ]; then         printf '%s
-' "${EANTRAG_VERSION}" > /etc/eantrag_version;     else         printf '%s
-' "dev" > /etc/eantrag_version;     fi
+RUN if [ -n "${EANTRAG_VERSION}" ] && [ "${EANTRAG_VERSION}" != "dev" ]; then \
+    printf '%s\\n' "${EANTRAG_VERSION}" > /etc/eantrag_version; \
+  else \
+    printf '%s\\n' "dev" > /etc/eantrag_version; \
+  fi
 
 # Smoke-Test beim Build: Java muss die konfigurierte LTS-Version ausführen.
 RUN java -version
