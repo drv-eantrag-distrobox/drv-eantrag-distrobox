@@ -14,6 +14,18 @@ VERSION_FILE="/etc/eantrag_version"
 VERSION="unbekannt"
 SCRIPT_DIR="/usr/local/bin"
 
+# Wichtig: Die Anwendung läuft im Container, nutzt aber den Host-Desktop und Host-CUPS.
+# Dadurch sieht Java den echten CUPS-Server und die echte GUI-Session des Hosts.
+export DISPLAY="${DISPLAY:-:0}"
+export XAUTHORITY="${XAUTHORITY:-${HOME}/.Xauthority}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:-X-Cinnamon}"
+
+if [[ -S "/var/run/cups/cups.sock" ]]; then
+    export CUPS_SERVER="/var/run/cups/cups.sock"
+fi
+
 mkdir -p "${APP_DIR}"
 
 for script in start_eantrag_dark.sh start_eantrag_light.sh ea_clipboard_helper.sh configure_credentials.sh; do

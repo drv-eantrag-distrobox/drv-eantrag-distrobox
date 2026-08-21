@@ -5,6 +5,18 @@ APP_DIR="${HOME}/eAntragExpertenversion"
 APP_BIN="${APP_DIR}/eAntrag"
 CONFIG_DIR="${APP_DIR}/dark_config"
 
+# Der Container nutzt den Host-Desktop und den Host-CUPS-Server. Deshalb müssen DISPLAY,
+# XDG_RUNTIME_DIR und CUPS_SERVER dem Host entsprechend weitergereicht werden.
+export DISPLAY="${DISPLAY:-:0}"
+export XAUTHORITY="${XAUTHORITY:-${HOME}/.Xauthority}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:-X-Cinnamon}"
+
+if [[ -S "/var/run/cups/cups.sock" ]]; then
+    export CUPS_SERVER="/var/run/cups/cups.sock"
+fi
+
 mkdir -p "${CONFIG_DIR}"
 
 export GDK_BACKEND=x11

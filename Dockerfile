@@ -16,7 +16,10 @@ LABEL org.opencontainers.image.source="https://github.com/drv-eantrag-distrobox/
 ENV DEBIAN_FRONTEND=noninteractive     LANG=C.UTF-8     LC_ALL=C.UTF-8     HOME=/home/distrobox     PATH=/usr/local/bin:${PATH}
 
 # Minimal notwendige GUI-/Druck-/Clipboard-Abhängigkeiten für die Container-Laufzeit.
-RUN apt-get update     && apt-get install -y --no-install-recommends        ca-certificates        cups-client        dbus-x11        evince        gnupg        libasound2        libcups2        libgtk-3-0        libx11-6        libxext6        libxi6        libxrender1        libxtst6        xauth        xclip        unzip        zenity     && apt-get clean     && rm -rf /var/lib/apt/lists/*
+# Wichtig: Der Container soll keine eigenen Drucker-Queues konfigurieren. Er nutzt die Host-CUPS-
+# Infrastruktur und den Host-Desktop über X11/Wayland. Deshalb reichen Client-Tools und PDF-/GUI-
+# Helfer aus; die eigentliche Druck- und Desktop-Integration bleibt auf dem Host.
+RUN apt-get update     && apt-get install -y --no-install-recommends        ca-certificates        cups        cups-client        cups-filters        dbus-x11        evince        ghostscript        gnupg        libasound2        libcups2        libgtk-3-0        libx11-6        libxext6        libxi6        libxrender1        libxtst6        xauth        xclip        unzip        xdg-utils        zenity     && apt-get clean     && rm -rf /var/lib/apt/lists/*
 
 # Die eigentlichen Start- und Hilfsskripte kommen mit dem Image mit. Der Host-Home wird von
 # Distrobox automatisch gemountet und ist der persistente Datenbereich. So bleiben die Skripte
