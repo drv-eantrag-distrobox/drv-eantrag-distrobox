@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Pflegehinweis:
+# Die Zugangsdaten werden hier bewusst im Container als verschlüsselte Datei gespeichert.
+# Der Nutzer muss die Passphrase beim Entschlüsseln erneut eingeben; sie bleibt nicht im
+# Container-Image oder in der App selbst gespeichert.
 APP_DIR="${HOME}/eAntragExpertenversion"
 GPG_FILE="${APP_DIR}/credentials.txt.gpg"
 TMP_FILE="/dev/shm/ea_credentials.$$"
@@ -51,8 +55,9 @@ fi
 printf '%s:%s' "$USERNAME" "$PASSWORD" > "$TMP_FILE"
 chmod 600 "$TMP_FILE"
 
-GPG_CMD=(gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 --passphrase)
-if ! printf '%s' "$PASSPHRASE" | "${GPG_CMD[@]}" --output "$GPG_FILE" "$TMP_FILE"; then
+# GPG wird hier mit einer expliziten Passphrase und dem Loopback-Mode gestartet.
+# Damit läuft die Verschlüsselung zuverlässig auch ohne grafischen GPG-Agent im Container.
+if ! printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 --output "$GPG_FILE" "$TMP_FILE"; then
     zenity --error --title="eAntrag Tresor" --text="Die Verschlüsselung ist fehlgeschlagen. Bitte erneut versuchen." --width=480 >/dev/null 2>&1 || true
     shred -u "$TMP_FILE" 2>/dev/null || rm -f "$TMP_FILE"
     exit 1
