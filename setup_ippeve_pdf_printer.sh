@@ -37,17 +37,31 @@ fi
 
 # IPP-Server starten. Der Ausgabeordner bleibt im Host-Home-Kontext des Distrobox-Users;
 # dadurch ist der PDF-Ausgabepfad für Java und Host-Viewer konsistent und stabil.
-ippeveprinter -v -d "${DROPZONE}" "${PRINTER_NAME}" >/tmp/ippeveprinter.log 2>&1 &
+# Wichtig: `-p` legt den tatsächlichen Listening-Port fest; ohne sie versucht CUPS/Java oft,
+# den falschen Endpoint zu erreichen, obwohl der Server noch gar nicht gestartet ist.
+ippeveprinter -v -d "${DROPZONE}" -p "${IPP_PORT}" "${PRINTER_NAME}" >/tmp/ippeveprinter.log 2>&1 &
 IPP_PID=$!
 
-sleep 2
+for _ in $(seq 1 30); do
+    if timeout 2 bash -c "</dev/tcp/127.0.0.1/${IPP_PORT}" >/dev/null 2>&1; then
+        break
+    fi
+    sleep 1
+done
+
+# Verifizierter Health-Check: Erst jetzt darf der Queue-Eintrag in CUPS geschaffen werden.
+if ! timeout 2 bash -c "</dev/tcp/127.0.0.1/${IPP_PORT}" >/dev/null 2>&1; then
+    echo "IPP-PDF-Drucker konnte nicht gestartet werden; Port ${IPP_PORT} bleibt unerreichbar." >&2
+    kill "${IPP_PID}" 2>/dev/null || true
+    exit 0
+fi
 
 # Wenn die Queue noch nicht existiert, wird sie explizit per CUPS-API angelegt.
 if ! lpstat -p "${PRINTER_NAME}" >/dev/null 2>&1; then
     lpadmin -p "${PRINTER_NAME}" -E -v "ipp://localhost:${IPP_PORT}/ipp/print" -m everywhere || {
         echo "Fehler beim Anlegen des IPP-PDF-Druckers." >&2
         kill "${IPP_PID}" 2>/dev/null || true
-        exit 1
+        exit 0
     }
 fi
 
@@ -55,15 +69,4 @@ lpadmin -d "${PRINTER_NAME}" >/dev/null 2>&1 || true
 export PRINTER="${PRINTER_NAME}"
 export LPDEST="${PRINTER_NAME}"
 
-# Ein kurzer health-check verhindert, dass der Start sauber scheint, aber das Queue-Backend
-# in der Praxis nicht erreichbar ist. Wenn die Verbindung nicht antwortet, darf der Start nicht
-# stillschweigend auf „ok“ stehen.
-for _ in $(seq 1 10); do
-    if timeout 2 bash -c "</dev/tcp/127.0.0.1/${IPP_PORT}" >/dev/null 2>&1; then
-        exit 0
-    fi
-    sleep 1
-done
-
-echo "IPP-PDF-Drucker wurde gestartet, aber Port ${IPP_PORT} antwortet nicht. Bitte prüfen Sie den CUPS/ippeveprinter-Status." >&2
 exit 0

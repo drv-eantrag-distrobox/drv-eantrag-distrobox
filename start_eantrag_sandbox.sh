@@ -41,15 +41,17 @@ fi
 
 mkdir -p "${APP_DIR}/print_dropzone"
 
-# Die PDF-Sandbox ist jetzt ein stabiler Fallback für den Fall, dass Java nach einem validen
-# PrintService verlangt. Sie läuft standardmäßig ohne manuelle Umgebungs-Variable, damit
-# der eAntrag-Client nicht mehr wegen eines nullen Druckers abstürzt.
+# Der IPP-PDF-Drucker dient als stabiler Fallback, falls Java einen gültigen PrintService
+# erwartet. Dabei bleibt das Hauptprinzip unangetastet: Der Container erzeugt die Datei,
+# der Host öffnet sie. Wenn der Fallback aus irgendeinem Grund nicht startet, blockiert das
+# den normalen Start nicht; es wird nur in der Logdatei hinterlegt und der Host-Viewer-Fallback
+# bleibt aktiv.
 if [[ -x "${APP_DIR}/setup_ippeve_pdf_printer.sh" ]]; then
-    "${APP_DIR}/setup_ippeve_pdf_printer.sh" || {
+    if ! "${APP_DIR}/setup_ippeve_pdf_printer.sh" >/tmp/eantrag_ippeve_setup.log 2>&1; then
         if command -v zenity >/dev/null 2>&1; then
             zenity --warning --title="eAntrag-Umgebung" --text="Der IPP-Everywhere-PDF-Drucker konnte nicht eingerichtet werden. Die Anwendung startet trotzdem; der Host-Viewer-Fallback bleibt aktiv." --width=520 >/dev/null 2>&1 || true
         fi
-    }
+    fi
 fi
 
 if [[ -x "${APP_DIR}/watch_print_dropzone.sh" ]] && ! pgrep -f "watch_print_dropzone.sh" >/dev/null 2>&1; then

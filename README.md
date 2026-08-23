@@ -23,6 +23,14 @@
    distrobox create --name drv-eantrag --image ghcr.io/drv-eantrag-distrobox/drv-eantrag-distrobox:latest --replace
    ```
 
+   Wenn du die aktuelle Distrobox-Manifest-Datei direkt aus dem Repository laden willst, kannst du sie auch mit `curl` herunterladen:
+
+   ```bash
+   curl -fsSL https://codeberg.org/drv-eantrag-distrobox/drv-eantrag-distrobox/raw/branch/main/distrobox.ini -o distrobox.ini
+   ```
+
+   Danach kannst du das Manifest lokal verwenden oder mit einem eigenen Distrobox-Setup weiter anpassen.
+
    Wenn du lokal bauen willst:
 
    ```bash
@@ -73,6 +81,7 @@ Wichtig:
 - Standardstarter ist Dark Mode; Light Mode kann über `EANTRAG_THEME=light` oder `start_eantrag_light.sh` aktiviert werden.
 - Unterstützte Installationsformate: `.tar.gz`, `.tgz` und `.zip`.
 - Der PDF-Viewer-Fallback nutzt den Host-Desktop; für WSL2/Windows wird dabei normalerweise `wslview` verwendet, für natives Linux `xdg-open`.
+- Die Container-Umgebung nutzt hostseitig sichtbaren X11-/CUPS-Kontext; deshalb bleiben Druck-/Viewer-Aktivitäten im Host-Kontext und werden nicht innerhalb der Box als „lokaler Desktop“ simuliert.
 
 ## Upgrade
 
