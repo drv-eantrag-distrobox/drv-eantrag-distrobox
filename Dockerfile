@@ -31,13 +31,14 @@ COPY ea_clipboard_helper.sh /usr/local/bin/ea_clipboard_helper.sh
 COPY configure_credentials.sh /usr/local/bin/configure_credentials.sh
 COPY setup_virtual_pdf_printer.sh /usr/local/bin/setup_virtual_pdf_printer.sh
 COPY setup_ippeve_pdf_printer.sh /usr/local/bin/setup_ippeve_pdf_printer.sh
+COPY setup_minimal_cups_printer.sh /usr/local/bin/setup_minimal_cups_printer.sh
 COPY watch_print_dropzone.sh /usr/local/bin/watch_print_dropzone.sh
 COPY open_pdf_from_container.sh /usr/local/bin/open_pdf_from_container.sh
 COPY xdg-open /usr/local/bin/xdg-open
 COPY start_eantrag_host_pdf.sh /usr/local/bin/start_eantrag_host_pdf.sh
 COPY start /usr/local/bin/start
 
-RUN chmod 0755 /usr/local/bin/start /usr/local/bin/start_eantrag_sandbox.sh     /usr/local/bin/start_eantrag_dark.sh     /usr/local/bin/start_eantrag_light.sh     /usr/local/bin/ea_clipboard_helper.sh     /usr/local/bin/configure_credentials.sh     /usr/local/bin/setup_virtual_pdf_printer.sh     /usr/local/bin/setup_ippeve_pdf_printer.sh     /usr/local/bin/watch_print_dropzone.sh     /usr/local/bin/open_pdf_from_container.sh     /usr/local/bin/xdg-open     /usr/local/bin/start_eantrag_host_pdf.sh     && mkdir -p /home/distrobox/eAntragExpertenversion     && mkdir -p /home/distrobox/.local/bin     && chown -R 1000:1000 /home/distrobox
+RUN chmod 0755 /usr/local/bin/start /usr/local/bin/start_eantrag_sandbox.sh     /usr/local/bin/start_eantrag_dark.sh     /usr/local/bin/start_eantrag_light.sh     /usr/local/bin/ea_clipboard_helper.sh     /usr/local/bin/configure_credentials.sh     /usr/local/bin/setup_virtual_pdf_printer.sh     /usr/local/bin/setup_ippeve_pdf_printer.sh     /usr/local/bin/setup_minimal_cups_printer.sh     /usr/local/bin/watch_print_dropzone.sh     /usr/local/bin/open_pdf_from_container.sh     /usr/local/bin/xdg-open     /usr/local/bin/start_eantrag_host_pdf.sh     && mkdir -p /home/distrobox/eAntragExpertenversion     && mkdir -p /home/distrobox/.local/bin     && chown -R 1000:1000 /home/distrobox
 
 # Wenn ein Git-Tag gesetzt ist, wird die Version in die Laufzeit-Datei geschrieben.
 RUN if [ -n "${EANTRAG_VERSION}" ] && [ "${EANTRAG_VERSION}" != "dev" ]; then \

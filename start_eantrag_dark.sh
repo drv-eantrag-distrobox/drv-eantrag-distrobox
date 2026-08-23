@@ -5,6 +5,10 @@ APP_DIR="${HOME}/eAntragExpertenversion"
 APP_BIN="${APP_DIR}/eAntrag"
 CONFIG_DIR="${APP_DIR}/dark_config"
 
+# Wichtiger Fix: Java nutzt `xdg-open` über den Prozess-Pfad. Deshalb muss /usr/local/bin
+# vor /usr/bin liegen, damit unser Host-Bridge-Wrapper statt des Standard-Launchers greift.
+export PATH="/usr/local/bin:/usr/local/sbin:${PATH}"
+
 # Der Container nutzt den Host-Desktop und den Host-CUPS-Server. Deshalb müssen DISPLAY,
 # XDG_RUNTIME_DIR und CUPS_SERVER dem Host entsprechend weitergereicht werden.
 export DISPLAY="${DISPLAY:-:0}"

@@ -15,7 +15,9 @@ VERSION="unbekannt"
 SCRIPT_DIR="/usr/local/bin"
 
 # Wichtig: Die Anwendung läuft im Container, nutzt aber den Host-Desktop und Host-CUPS.
-# Dadurch sieht Java den echten CUPS-Server und die echte GUI-Session des Hosts.
+# Zusätzlich muss /usr/local/bin vor /usr/bin liegen, damit Java den Host-Viewer-Wrapper für
+# xdg-open statt dem lokalen Linux-Stub benutzt.
+export PATH="/usr/local/bin:/usr/local/sbin:${PATH}"
 export DISPLAY="${DISPLAY:-:0}"
 export XAUTHORITY="${XAUTHORITY:-${HOME}/.Xauthority}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
@@ -41,15 +43,15 @@ fi
 
 mkdir -p "${APP_DIR}/print_dropzone"
 
-# Der IPP-PDF-Drucker dient als stabiler Fallback, falls Java einen gültigen PrintService
-# erwartet. Dabei bleibt das Hauptprinzip unangetastet: Der Container erzeugt die Datei,
-# der Host öffnet sie. Wenn der Fallback aus irgendeinem Grund nicht startet, blockiert das
-# den normalen Start nicht; es wird nur in der Logdatei hinterlegt und der Host-Viewer-Fallback
+# Der minimale CUPS-IPP-Drucker dient als stabiler Fallback, falls Java einen gültigen
+# PrintService erwartet. Dabei bleibt das Hauptprinzip unangetastet: Der Container erzeugt die
+# Datei, der Host öffnet sie. Wenn der Fallback aus irgendeinem Grund nicht startet, blockiert
+# das den normalen Start nicht; es wird nur in der Logdatei hinterlegt und der Host-Viewer-Fallback
 # bleibt aktiv.
-if [[ -x "${APP_DIR}/setup_ippeve_pdf_printer.sh" ]]; then
-    if ! "${APP_DIR}/setup_ippeve_pdf_printer.sh" >/tmp/eantrag_ippeve_setup.log 2>&1; then
+if [[ -x "${APP_DIR}/setup_minimal_cups_printer.sh" ]]; then
+    if ! "${APP_DIR}/setup_minimal_cups_printer.sh" >/tmp/eantrag_minimal_cups_setup.log 2>&1; then
         if command -v zenity >/dev/null 2>&1; then
-            zenity --warning --title="eAntrag-Umgebung" --text="Der IPP-Everywhere-PDF-Drucker konnte nicht eingerichtet werden. Die Anwendung startet trotzdem; der Host-Viewer-Fallback bleibt aktiv." --width=520 >/dev/null 2>&1 || true
+            zenity --warning --title="eAntrag-Umgebung" --text="Der minimale CUPS-IPP-Drucker konnte nicht eingerichtet werden. Die Anwendung startet trotzdem; der Host-Viewer-Fallback bleibt aktiv." --width=520 >/dev/null 2>&1 || true
         fi
     fi
 fi
