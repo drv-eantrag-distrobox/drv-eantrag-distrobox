@@ -39,6 +39,18 @@ fi
 # dadurch ist der PDF-Ausgabepfad für Java und Host-Viewer konsistent und stabil.
 # Wichtig: `-p` legt den tatsächlichen Listening-Port fest; ohne sie versucht CUPS/Java oft,
 # den falschen Endpoint zu erreichen, obwohl der Server noch gar nicht gestartet ist.
+# In der hier verwendeten CUPS-Version gibt es kein --no-shared-Flag. Deshalb muss Avahi/D-Bus
+# aktiviert werden, damit die lokale mDNS-/Bonjour-Initialisierung sauber läuft.
+if command -v avahi-daemon >/dev/null 2>&1; then
+    mkdir -p /run/dbus
+    if ! pgrep -x dbus-daemon >/dev/null 2>&1; then
+        dbus-daemon --system --fork >/dev/null 2>&1 || true
+    fi
+    if ! pgrep -x avahi-daemon >/dev/null 2>&1; then
+        avahi-daemon -D >/dev/null 2>&1 || true
+    fi
+fi
+
 ippeveprinter -v -d "${DROPZONE}" -p "${IPP_PORT}" "${PRINTER_NAME}" >/tmp/ippeveprinter.log 2>&1 &
 IPP_PID=$!
 

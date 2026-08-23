@@ -30,6 +30,19 @@ if pgrep -f "ippeveprinter.*${PRINTER_NAME}" >/dev/null 2>&1; then
 fi
 
 if command -v ippeveprinter >/dev/null 2>&1; then
+    # In der Ubuntu/CUPS-Version, die wir hier nutzen, gibt es kein --no-shared-Flag.
+    # Deshalb muss die lokale mDNS-/Bonjour-Initialisierung per Avahi/D-Bus aktiviert werden,
+    # damit ippeveprinter in der Container-Umgebung sauber starten kann.
+    if command -v avahi-daemon >/dev/null 2>&1; then
+        mkdir -p /run/dbus
+        if ! pgrep -x dbus-daemon >/dev/null 2>&1; then
+            dbus-daemon --system --fork >/dev/null 2>&1 || true
+        fi
+        if ! pgrep -x avahi-daemon >/dev/null 2>&1; then
+            avahi-daemon -D >/dev/null 2>&1 || true
+        fi
+    fi
+
     ippeveprinter -d "${DROPZONE}" -p "${IPP_PORT}" "${PRINTER_NAME}" >/tmp/ippeveprinter.log 2>&1 &
 else
     echo "ippeveprinter nicht gefunden. Paket: cups-ipp-utils" >&2
