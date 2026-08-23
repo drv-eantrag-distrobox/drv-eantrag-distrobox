@@ -41,16 +41,21 @@ fi
 
 mkdir -p "${APP_DIR}/print_dropzone"
 
-if [[ -x "${APP_DIR}/setup_virtual_pdf_printer.sh" ]]; then
-    "${APP_DIR}/setup_virtual_pdf_printer.sh" || {
-        if command -v zenity >/dev/null 2>&1; then
-            zenity --warning --title="eAntrag-Umgebung" --text="Der virtuelle PDF-Drucker konnte nicht eingerichtet werden. Die Anwendung startet trotzdem; das Drucken kann später erneut initialisiert werden." --width=520 >/dev/null 2>&1 || true
-        fi
-    }
-fi
+# Die PDF-Sandbox ist bewusst optional und kein Standard-Setup. Die Host-Viewer-Logik ist die
+# primäre und stabilere Lösung; der PDF-Drucker wird nur noch gestartet, wenn der Nutzer dies
+# ausdrücklich aktiviert.
+if [[ "${EANTRAG_ENABLE_PDF_SANDBOX:-0}" == "1" ]]; then
+    if [[ -x "${APP_DIR}/setup_virtual_pdf_printer.sh" ]]; then
+        "${APP_DIR}/setup_virtual_pdf_printer.sh" || {
+            if command -v zenity >/dev/null 2>&1; then
+                zenity --warning --title="eAntrag-Umgebung" --text="Der virtuelle PDF-Drucker konnte nicht eingerichtet werden. Die Anwendung startet trotzdem; die Host-Viewer-Logik bleibt aktiv." --width=520 >/dev/null 2>&1 || true
+            fi
+        }
+    fi
 
-if [[ -x "${APP_DIR}/watch_print_dropzone.sh" ]] && ! pgrep -f "watch_print_dropzone.sh" >/dev/null 2>&1; then
-    nohup "${APP_DIR}/watch_print_dropzone.sh" >/tmp/eantrag_print_watch.log 2>&1 &
+    if [[ -x "${APP_DIR}/watch_print_dropzone.sh" ]] && ! pgrep -f "watch_print_dropzone.sh" >/dev/null 2>&1; then
+        nohup "${APP_DIR}/watch_print_dropzone.sh" >/tmp/eantrag_print_watch.log 2>&1 &
+    fi
 fi
 
 if command -v zenity >/dev/null 2>&1; then
