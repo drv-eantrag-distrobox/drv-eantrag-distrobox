@@ -109,9 +109,35 @@ esac
     fi
 fi
 
-if [[ ! -f "${APP_DIR}/start_eantrag_dark.sh" ]]; then
-    zenity --error --title="eAntrag-Umgebung" --text="Der Standardstarter wurde nicht gefunden. Bitte die Installation prüfen." --width=500 >/dev/null 2>&1 || true
+if [[ ! -f "${APP_DIR}/start_eantrag_dark.sh" ]] || [[ ! -f "${APP_DIR}/start_eantrag_light.sh" ]]; then
+    zenity --error --title="eAntrag-Umgebung" --text="Ein oder mehrere Starter wurden nicht gefunden. Bitte die Installation prüfen." --width=500 >/dev/null 2>&1 || true
     exit 1
+fi
+
+# Theme-Logik:
+# - Standard bleibt Dark Mode für eine stabile und konsistente erste Erfahrung.
+# - Falls der Host ein helles Theme sauber meldet und der Nutzer dies explizit gewählt hat,
+#   kann Light Mode aktiv werden.
+# - Wenn keine sichere Erkennung möglich ist, bleibt Dark Mode der sichere Default.
+THEME="${EANTRAG_THEME:-dark}"
+
+if [[ "${THEME}" != "light" && "${THEME}" != "dark" ]]; then
+    THEME="dark"
+fi
+
+if [[ "${THEME}" == "auto" ]]; then
+    THEME="dark"
+    if command -v gsettings >/dev/null 2>&1; then
+        if gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null | grep -qi 'dark'; then
+            THEME="dark"
+        else
+            THEME="light"
+        fi
+    fi
+fi
+
+if [[ "${THEME}" == "light" ]]; then
+    exec "${APP_DIR}/start_eantrag_light.sh" "$@"
 fi
 
 exec "${APP_DIR}/start_eantrag_dark.sh" "$@"
