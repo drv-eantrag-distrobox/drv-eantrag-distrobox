@@ -2,11 +2,15 @@
 set -Eeuo pipefail
 
 # Pflegehinweis:
-# Dieser Watcher überwacht die PDF-Dropzone. Jede neue PDF-Datei wird mit Zeitstempel
-# versehen und anschließend mit dem Host-Viewer geöffnet. So bleiben Druck und Anzeige
-# vollständig im Desktop-Kontext des Hosts, obwohl der Druck im Container erzeugt wird.
-DROPZONE="${HOME}/eAntragExpertenversion/print_dropzone"
-OPENER="${HOME}/eAntragExpertenversion/open_pdf_from_container.sh"
+# Der Watcher überwacht sowohl die explizite PDF-Dropzone als auch das App-Verzeichnis.
+# Dadurch bleiben beide Pfade als Fallback nutzbar: Druckausgaben können in die Dropzone landen,
+# aber PDF-Dateien aus dem Standard-Installationsordner werden ebenfalls erkannt und mit dem
+# Host-Viewer geöffnet. So bleibt die Lösung stabil, auch wenn eine Java- oder Client-Version
+# den Ausgabeort anders wählt.
+APP_DIR="${EANTRAG_APP_DIR:-${HOME}/eAntragExpertenversion}"
+DROPZONE="${APP_DIR}/print_dropzone"
+OPENER="${APP_DIR}/open_pdf_from_container.sh"
+WATCH_DIRS=("${DROPZONE}" "${APP_DIR}")
 
 mkdir -p "${DROPZONE}"
 
@@ -20,19 +24,31 @@ if ! command -v inotifywait >/dev/null 2>&1; then
     exit 1
 fi
 
-while true; do
-    inotifywait -m -e close_write -e moved_to --format '%f' "${DROPZONE}" 2>/dev/null | while IFS= read -r file_name; do
-        case "${file_name}" in
-            *.pdf|*.PDF)
-                src="${DROPZONE}/${file_name}"
-                if [[ ! -f "${src}" ]]; then
-                    continue
-                fi
+handle_pdf() {
+    local src="${1:-}"
+    if [[ -z "${src}" || ! -f "${src}" ]]; then
+        return 0
+    fi
 
-                stamp="$(date +%Y%m%d%H%M%S)"
-                target="${DROPZONE}/${stamp}_$(basename "${file_name%.pdf}").pdf"
-                mv -f "${src}" "${target}"
-                bash "${OPENER}" "${target}" || true
+    local dir base stamp target
+    dir="$(dirname "${src}")"
+    base="$(basename "${src}")"
+
+    if [[ "${dir}" == "${DROPZONE}" ]]; then
+        stamp="$(date +%Y%m%d%H%M%S)"
+        target="${DROPZONE}/${stamp}_${base}"
+        mv -f "${src}" "${target}"
+        src="${target}"
+    fi
+
+    bash "${OPENER}" "${src}" || true
+}
+
+while true; do
+    inotifywait -m -e close_write -e moved_to --format '%w%f' "${WATCH_DIRS[@]}" 2>/dev/null | while IFS= read -r full_path; do
+        case "${full_path}" in
+            *.pdf|*.PDF)
+                handle_pdf "${full_path}"
                 ;;
         esac
     done || break

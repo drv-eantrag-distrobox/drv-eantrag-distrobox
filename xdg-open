@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# Pflegehinweis:
+# Java-Apps wie de.drv.ea.exp.client rufen Desktop.open() auf. In Distrobox/WSL2 ist das
+# normalerweise nicht der echte Host-Desktop-Viewer, sondern nur ein lokaler Linux-Desktop-Stub.
+# Diese Wrapper-Datei leitet PDF-Öffnungen deshalb auf den Host-Viewer um, damit der Java-Code
+# unverändert bleibt und trotzdem im richtigen GUI-Kontext des Hosts geöffnet wird.
+
+open_on_host() {
+    local target="${1:-}"
+
+    if [[ -z "${target}" ]]; then
+        return 1
+    fi
+
+    if [[ "${target}" == file:* ]]; then
+        target="${target#file:}"
+        if [[ "${target}" == //* ]]; then
+            target="/${target#//}"
+        fi
+    fi
+
+    if command -v distrobox-host-exec >/dev/null 2>&1; then
+        if distrobox-host-exec command -v wslview >/dev/null 2>&1; then
+            distrobox-host-exec wslview "${target}"
+            return 0
+        fi
+
+        if distrobox-host-exec command -v xdg-open >/dev/null 2>&1; then
+            distrobox-host-exec xdg-open "${target}"
+            return 0
+        fi
+    fi
+
+    if command -v wslview >/dev/null 2>&1; then
+        wslview "${target}"
+        return 0
+    fi
+
+    if command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${target}" >/dev/null 2>&1 &
+        return 0
+    fi
+
+    if command -v gio >/dev/null 2>&1; then
+        gio open "${target}" >/dev/null 2>&1 &
+        return 0
+    fi
+
+    if command -v evince >/dev/null 2>&1; then
+        evince "${target}" >/dev/null 2>&1 &
+        return 0
+    fi
+
+    return 1
+}
+
+if [[ $# -eq 0 ]]; then
+    exec /usr/bin/xdg-open "$@"
+fi
+
+for arg in "$@"; do
+    case "${arg}" in
+        *.pdf|*.PDF|file:*.pdf|file:*.PDF|file://*.pdf|file://*.PDF)
+            if open_on_host "${arg}"; then
+                exit 0
+            fi
+            ;;
+    esac
+done
+
+exec /usr/bin/xdg-open "$@"

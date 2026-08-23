@@ -28,7 +28,7 @@ fi
 
 mkdir -p "${APP_DIR}"
 
-for script in start_eantrag_dark.sh start_eantrag_light.sh ea_clipboard_helper.sh configure_credentials.sh setup_virtual_pdf_printer.sh watch_print_dropzone.sh open_pdf_from_container.sh; do
+for script in start_eantrag_dark.sh start_eantrag_light.sh ea_clipboard_helper.sh configure_credentials.sh setup_virtual_pdf_printer.sh setup_ippeve_pdf_printer.sh watch_print_dropzone.sh open_pdf_from_container.sh; do
     if [[ ! -f "${APP_DIR}/${script}" ]] && [[ -f "${SCRIPT_DIR}/${script}" ]]; then
         install -m 0755 "${SCRIPT_DIR}/${script}" "${APP_DIR}/${script}"
     fi
@@ -41,21 +41,19 @@ fi
 
 mkdir -p "${APP_DIR}/print_dropzone"
 
-# Die PDF-Sandbox ist bewusst optional und kein Standard-Setup. Die Host-Viewer-Logik ist die
-# primäre und stabilere Lösung; der PDF-Drucker wird nur noch gestartet, wenn der Nutzer dies
-# ausdrücklich aktiviert.
-if [[ "${EANTRAG_ENABLE_PDF_SANDBOX:-0}" == "1" ]]; then
-    if [[ -x "${APP_DIR}/setup_virtual_pdf_printer.sh" ]]; then
-        "${APP_DIR}/setup_virtual_pdf_printer.sh" || {
-            if command -v zenity >/dev/null 2>&1; then
-                zenity --warning --title="eAntrag-Umgebung" --text="Der virtuelle PDF-Drucker konnte nicht eingerichtet werden. Die Anwendung startet trotzdem; die Host-Viewer-Logik bleibt aktiv." --width=520 >/dev/null 2>&1 || true
-            fi
-        }
-    fi
+# Die PDF-Sandbox ist jetzt ein stabiler Fallback für den Fall, dass Java nach einem validen
+# PrintService verlangt. Sie läuft standardmäßig ohne manuelle Umgebungs-Variable, damit
+# der eAntrag-Client nicht mehr wegen eines nullen Druckers abstürzt.
+if [[ -x "${APP_DIR}/setup_ippeve_pdf_printer.sh" ]]; then
+    "${APP_DIR}/setup_ippeve_pdf_printer.sh" || {
+        if command -v zenity >/dev/null 2>&1; then
+            zenity --warning --title="eAntrag-Umgebung" --text="Der IPP-Everywhere-PDF-Drucker konnte nicht eingerichtet werden. Die Anwendung startet trotzdem; der Host-Viewer-Fallback bleibt aktiv." --width=520 >/dev/null 2>&1 || true
+        fi
+    }
+fi
 
-    if [[ -x "${APP_DIR}/watch_print_dropzone.sh" ]] && ! pgrep -f "watch_print_dropzone.sh" >/dev/null 2>&1; then
-        nohup "${APP_DIR}/watch_print_dropzone.sh" >/tmp/eantrag_print_watch.log 2>&1 &
-    fi
+if [[ -x "${APP_DIR}/watch_print_dropzone.sh" ]] && ! pgrep -f "watch_print_dropzone.sh" >/dev/null 2>&1; then
+    nohup "${APP_DIR}/watch_print_dropzone.sh" >/tmp/eantrag_print_watch.log 2>&1 &
 fi
 
 if command -v zenity >/dev/null 2>&1; then

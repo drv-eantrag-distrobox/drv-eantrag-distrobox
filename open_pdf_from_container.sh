@@ -13,6 +13,13 @@ open_pdf_from_container() {
         return 1
     fi
 
+    if [[ "${pdf_path}" == file:* ]]; then
+        pdf_path="${pdf_path#file:}"
+        if [[ "${pdf_path}" == //* ]]; then
+            pdf_path="/${pdf_path#//}"
+        fi
+    fi
+
     if [[ ! -f "${pdf_path}" ]]; then
         echo "PDF-Datei nicht gefunden: ${pdf_path}" >&2
         return 1

@@ -15,7 +15,6 @@ if [[ ! -f "${APP_BIN}" ]]; then
     exit 1
 fi
 
-export EANTRAG_ENABLE_PDF_SANDBOX=0
 export EANTRAG_PDF_OUTPUT="${APP_DIR}/eAntrag_Ausgabe.pdf"
 
 if [[ -f "${APP_DIR}/open_pdf_from_container.sh" ]]; then
